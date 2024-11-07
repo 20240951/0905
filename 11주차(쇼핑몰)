@@ -1,0 +1,174 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_PRODUCTS 5
+#define NAME_LENGTH 50
+#define FILE_NAME "product_info.dat"
+
+typedef struct {
+    int id;
+    char name[NAME_LENGTH];
+    double price;
+    int stock_in;
+    int stock_out;
+    double total_sales;
+} Product;
+
+Product products[MAX_PRODUCTS];
+int product_count = 0;
+
+void save_product_info() {
+    FILE *file = fopen(FILE_NAME, "wb");
+    if (file == NULL) {
+        printf("상품 정보를 저장할 수 없습니다.\n");
+        return;
+    }
+
+    fwrite(&product_count, sizeof(int), 1, file);  // Save product count first
+    fwrite(products, sizeof(Product), product_count, file);  // Save product details
+
+    fclose(file);
+    printf("상품 정보가 저장되었습니다.\n");
+}
+
+void load_product_info() {
+    FILE *file = fopen(FILE_NAME, "rb");
+    if (file == NULL) {
+        printf("저장된 상품 정보가 없습니다.\n");
+        return;
+    }
+
+    fread(&product_count, sizeof(int), 1, file);  // Load product count first
+    fread(products, sizeof(Product), product_count, file);  // Load product details
+
+    fclose(file);
+    printf("상품 정보가 성공적으로 불러와졌습니다.\n");
+}
+
+void add_or_update_product() {
+    if (product_count >= MAX_PRODUCTS) {
+        printf("상품의 개수는 최대 %d개까지 가능합니다.\n", MAX_PRODUCTS);
+        return;
+    }
+
+    int id;
+    printf("상품ID: ");
+    scanf("%d", &id);
+
+    // Check if the product already exists
+    for (int i = 0; i < product_count; i++) {
+        if (products[i].id == id) {
+            // Update existing product
+            printf("상품명: ");
+            scanf("%s", products[i].name);
+            printf("입고량: ");
+            scanf("%d", &products[i].stock_in);
+            printf("판매가격: ");
+            scanf("%lf", &products[i].price);
+            return;
+        }
+    }
+
+    // If product does not exist, add a new one
+    products[product_count].id = id;
+    printf("상품명: ");
+    scanf("%s", products[product_count].name);
+    printf("입고량: ");
+    scanf("%d", &products[product_count].stock_in);
+    printf("판매가격: ");
+    scanf("%lf", &products[product_count].price);
+    products[product_count].stock_out = 0;
+    products[product_count].total_sales = 0;
+    product_count++;
+}
+
+void sell_product() {
+    int id, qty;
+    printf("상품ID: ");
+    scanf("%d", &id);
+
+    // Find the product
+    for (int i = 0; i < product_count; i++) {
+        if (products[i].id == id) {
+            printf("판매량: ");
+            scanf("%d", &qty);
+
+            if (qty > products[i].stock_in) {
+                printf("재고가 부족합니다.\n");
+            } else {
+                products[i].stock_in -= qty;
+                products[i].stock_out += qty;
+                products[i].total_sales += qty * products[i].price;
+            }
+            return;
+        }
+    }
+
+    printf("해당 상품ID가 존재하지 않습니다.\n");
+}
+
+void individual_product_info() {
+    int id;
+    printf("상품ID: ");
+    scanf("%d", &id);
+
+    for (int i = 0; i < product_count; i++) {
+        if (products[i].id == id) {
+            printf("상품명: %s\n", products[i].name);
+            printf("가격: %.2f\n", products[i].price);
+            printf("입고량: %d\n", products[i].stock_in);
+            printf("판매량: %d\n", products[i].stock_out);
+            printf("총 판매금액: %.2f\n", products[i].total_sales);
+            return;
+        }
+    }
+
+    printf("해당 상품ID가 존재하지 않습니다.\n");
+}
+
+void total_product_info() {
+    printf("전체 상품 현황:\n");
+    for (int i = 0; i < product_count; i++) {
+        printf("상품ID: %d, 상품명: %s, 가격: %.2f, 입고량: %d, 판매량: %d, 총 판매금액: %.2f\n",
+               products[i].id, products[i].name, products[i].price, products[i].stock_in,
+               products[i].stock_out, products[i].total_sales);
+    }
+}
+
+int main() {
+    int choice;
+
+    while (1) {
+        printf("[쇼핑몰 관리 프로그램]\n");
+        printf("원하는 메뉴를 선택하세요.\n");
+        printf("1. 입고\n");
+        printf("2. 판매\n");
+        printf("3. 개별상품정보\n");
+        printf("4. 전체상품정보\n");
+        printf("5. 상품정보 저장\n");
+        printf("6. 상품정보 가져오기\n");
+        printf("7. 종료\n");
+        printf("선택: ");
+        scanf("%d", &choice);
+
+        if (choice == 1) { // 입고
+            add_or_update_product();
+        } else if (choice == 2) { // 판매
+            sell_product();
+        } else if (choice == 3) { // 개별상품정보
+            individual_product_info();
+        } else if (choice == 4) { // 전체상품정보
+            total_product_info();
+        } else if (choice == 5) { // 상품정보 저장
+            save_product_info();
+        } else if (choice == 6) { // 상품정보 가져오기
+            load_product_info();
+        } else if (choice == 7) { // 종료
+            break;
+        } else {
+            printf("잘못된 선택입니다. 다시 선택해주세요.\n");
+        }
+    }
+
+    return 0;
+}
